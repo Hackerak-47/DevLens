@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback, useMemo } from 'react';
-import ReactFlow, { Background, Controls, Node, Edge, useNodesState, useEdgesState, MarkerType } from 'reactflow';
+import ReactFlow, { Background, Controls, Node, Edge, MarkerType, Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { TbBinaryTree2, TbX } from 'react-icons/tb';
 import { FiFile, FiGitBranch, FiBox } from 'react-icons/fi';
@@ -28,7 +28,10 @@ function CustomNode({ data }: { data: any }) {
   const isHighComplexity = data.complexity > 60;
 
   return (
-    <div
+    <>
+      <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
+      <div
+
       className={`graph-node ${data.selected ? 'graph-node--selected' : ''} ${isHighComplexity ? 'graph-node--critical' : ''}`}
       style={{ borderColor: data.selected ? borderColor : undefined }}
     >
@@ -48,6 +51,8 @@ function CustomNode({ data }: { data: any }) {
         </span>
       </div>
     </div>
+    <Handle type="source" position={Position.Bottom} style={{ visibility: 'hidden' }} />
+    </>
   );
 }
 
@@ -125,9 +130,6 @@ export default function DependencyGraph() {
     }));
   }, [repoData, selectedNodeId]);
 
-  const [nodes, , onNodesChange] = useNodesState(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
-
   const onNodeClick = useCallback((_: any, node: Node) => {
     setSelectedNodeId((prev: string | null) => prev === node.id ? null : node.id);
   }, []);
@@ -149,10 +151,8 @@ export default function DependencyGraph() {
       </div>
       <div className="dep-graph__container">
         <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          nodes={initialNodes}
+          edges={initialEdges}
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
           fitView
