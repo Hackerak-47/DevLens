@@ -36,13 +36,14 @@ export async function POST(req: Request) {
     const langRes = await fetch(repoData.languages_url);
     const langData = langRes.ok ? await langRes.json() : {};
     
-    // Calculate language percentages
+    // Calculate language percentages and estimate lines of code (approx 50 bytes per line of code)
     const totalBytes = Object.values(langData).reduce((a: any, b: any) => a + b, 0) as number;
     const colors = ['#00d97e', '#ff6b35', '#00b8ff', '#ffb800', '#ff00ff'];
     const languages = Object.entries(langData).map(([name, bytes], index) => ({
       name,
       percentage: totalBytes > 0 ? Math.round(((bytes as number) / totalBytes) * 100) : 0,
-      color: colors[index % colors.length]
+      color: colors[index % colors.length],
+      linesOfCode: Math.round((bytes as number) / 50)
     })).sort((a, b) => b.percentage - a.percentage);
 
     // 3. Fetch recent commits (for Git Analytics)
@@ -292,7 +293,7 @@ export async function POST(req: Request) {
         commits: repoData.size,
         contributors: contributors.length > 0 ? contributors.length : 1,
         totalFiles: files.length > 0 ? files.length : 100,
-        linesOfCode: (files.length > 0 ? files.length : 100) * 150,
+        linesOfCode: Math.round(totalBytes / 50),
         branches: repoData.network_count || 3,
         languages: languages.length > 0 ? languages : [{ name: 'Unknown', percentage: 100, color: '#666' }]
       },
