@@ -65,21 +65,22 @@ export async function POST(req: Request) {
     const contribRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/contributors?per_page=5`);
     const contribData = contribRes.ok ? await contribRes.json() : [];
     
-    const contributors = contribData.map((c: any) => ({
+    const contributors = Array.isArray(contribData) ? contribData.map((c: any) => ({
       name: c.login,
       avatar: c.avatar_url,
       commits: c.contributions,
       additions: Math.floor(c.contributions * (Math.random() * 100 + 50)),
       deletions: Math.floor(c.contributions * (Math.random() * 50 + 10)),
-    }));
+    })) : [];
 
     // 5. Fetch Git Tree for File Explorer & Dependency Graph
     const treeRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/git/trees/${repoData.default_branch}?recursive=1`);
     const treeData = treeRes.ok ? await treeRes.json() : { tree: [] };
+    const safeTree = Array.isArray(treeData.tree) ? treeData.tree : [];
 
-    const paths = treeData.tree.map((item: any) => item.path);
-    const files = treeData.tree.filter((item: any) => item.type === 'blob');
-    const dirs = treeData.tree.filter((item: any) => item.type === 'tree');
+    const paths = safeTree.map((item: any) => item.path);
+    const files = safeTree.filter((item: any) => item.type === 'blob');
+    const dirs = safeTree.filter((item: any) => item.type === 'tree');
 
     // Build Dynamic File Tree
     const selectedPaths = paths.slice(0, 50); // limit to top 50 to avoid massive UI trees
