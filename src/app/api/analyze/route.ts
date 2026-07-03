@@ -19,12 +19,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid GitHub URL' }, { status: 400 });
     }
 
+    const headers: Record<string, string> = {
+      'Accept': 'application/vnd.github.v3+json',
+    };
+    
+    if (process.env.GITHUB_TOKEN) {
+      headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+    }
+
     // 1. Fetch Repository Details
-    const repoRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}`, {
-      headers: {
-        'Accept': 'application/vnd.github.v3+json',
-      }
-    });
+    const repoRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}`, { headers });
 
     if (!repoRes.ok) {
       return NextResponse.json({ error: 'Repository not found or API rate limit exceeded.' }, { status: repoRes.status });
@@ -33,7 +37,7 @@ export async function POST(req: Request) {
     const repoData = await repoRes.json();
 
     // 2. Fetch Languages
-    const langRes = await fetch(repoData.languages_url);
+    const langRes = await fetch(repoData.languages_url, { headers });
     const langData = langRes.ok ? await langRes.json() : {};
     
     // Calculate language percentages and estimate lines of code (approx 50 bytes per line of code)
@@ -47,7 +51,7 @@ export async function POST(req: Request) {
     })).sort((a, b) => b.percentage - a.percentage);
 
     // 3. Fetch recent commits (for Git Analytics)
-    const commitsRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/commits?per_page=10`);
+    const commitsRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/commits?per_page=10`, { headers });
     const commitsData = commitsRes.ok ? await commitsRes.json() : [];
 
     // Generate proper weekly timeline for the last 8 weeks
@@ -62,7 +66,7 @@ export async function POST(req: Request) {
     }
 
     // 4. Fetch Contributors
-    const contribRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/contributors?per_page=5`);
+    const contribRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/contributors?per_page=5`, { headers });
     const contribData = contribRes.ok ? await contribRes.json() : [];
     
     const contributors = Array.isArray(contribData) ? contribData.map((c: any) => ({
@@ -74,7 +78,7 @@ export async function POST(req: Request) {
     })) : [];
 
     // 5. Fetch Git Tree for File Explorer & Dependency Graph
-    const treeRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/git/trees/${repoData.default_branch}?recursive=1`);
+    const treeRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/git/trees/${repoData.default_branch}?recursive=1`, { headers });
     const treeData = treeRes.ok ? await treeRes.json() : { tree: [] };
     const safeTree = Array.isArray(treeData.tree) ? treeData.tree : [];
 
@@ -115,7 +119,7 @@ export async function POST(req: Request) {
     const dirsToUse = topLevelDirs.length > 0 ? topLevelDirs : fallbackDirs;
 
     // 6. Fetch package.json for real dependencies and tech debt
-    const pkgRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/package.json`);
+    const pkgRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/contents/package.json`, { headers });
     let packageJson: any = null;
     let realDependencies: Record<string, string> = {};
     
