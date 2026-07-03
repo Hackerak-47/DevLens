@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     const trueLinesOfCode = Math.round(totalBytes / 50);
 
     // 3. Fetch recent commits (for Git Analytics)
-    const commitsRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/commits?per_page=10`, { headers });
+    const commitsRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/commits?per_page=100`, { headers });
     const commitsData = commitsRes.ok ? await commitsRes.json() : [];
 
     // 4. Fetch Contributors
@@ -70,33 +70,28 @@ export async function POST(req: Request) {
       deletions: Math.floor(c.contributions * (Math.random() * 50 + 10)),
     })) : [];
 
-    // Generate proper weekly timeline for the last 8 weeks that exactly sums to totalCommits
+    // Generate proper weekly timeline for the last 8 weeks using REAL commit data
     const totalCommits = contributors.reduce((sum: number, c: any) => sum + c.commits, 0) || (repoData.size > 0 ? repoData.size : 10);
     
     const recentCommits = [];
-    let remainingCommits = totalCommits;
-    
-    // Create 8 random buckets
-    const chunks = Array.from({ length: 8 }, () => Math.random());
-    const chunkSum = chunks.reduce((a, b) => a + b, 0);
+    const today = new Date();
     
     for (let i = 7; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - (i * 7));
+      // Calculate the end date of the week bucket
+      const bucketEnd = new Date(today.getTime() - (i * 7 * 24 * 60 * 60 * 1000));
+      // Calculate the start date of the week bucket (7 days prior)
+      const bucketStart = new Date(bucketEnd.getTime() - (7 * 24 * 60 * 60 * 1000));
       
-      let weekCommits = 0;
-      if (i === 0) {
-        weekCommits = remainingCommits; // The final week takes whatever is left to sum perfectly
-      } else {
-        weekCommits = Math.round((chunks[i] / chunkSum) * totalCommits);
-        if (weekCommits > remainingCommits) weekCommits = remainingCommits;
-      }
-      
-      remainingCommits -= weekCommits;
+      // Count exactly how many REAL commits fell into this 7-day window
+      const realCommitCount = Array.isArray(commitsData) ? commitsData.filter((c: any) => {
+        if (!c.commit?.author?.date) return false;
+        const commitDate = new Date(c.commit.author.date);
+        return commitDate > bucketStart && commitDate <= bucketEnd;
+      }).length : 0;
       
       recentCommits.push({
-        week: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-        commits: weekCommits
+        week: bucketEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        commits: realCommitCount
       });
     }
 
