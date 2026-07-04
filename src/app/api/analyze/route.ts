@@ -242,7 +242,7 @@ export async function POST(req: Request) {
         dir,
         dirFiles: files.filter((f: any) => f.path.startsWith(dir.path + '/'))
       }));
-      const totalDirFiles = dirFileCounts.reduce((sum, d) => sum + d.dirFiles.length, 0) || 1;
+      const totalDirFiles = dirFileCounts.reduce((sum: number, d: any) => sum + d.dirFiles.length, 0) || 1;
 
       dynamicNodes = dirFileCounts.map((d, i) => {
         const proportion = d.dirFiles.length / totalDirFiles;
