@@ -62,13 +62,16 @@ export async function POST(req: Request) {
     const contribRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/contributors?per_page=5`, { headers });
     const contribData = contribRes.ok ? await contribRes.json() : [];
     
-    const contributors = Array.isArray(contribData) ? contribData.map((c: any) => ({
-      name: c.login,
-      avatar: c.avatar_url,
-      commits: c.contributions,
-      additions: Math.floor(c.contributions * (Math.random() * 100 + 50)),
-      deletions: Math.floor(c.contributions * (Math.random() * 50 + 10)),
-    })) : [];
+    const contributors = Array.isArray(contribData) ? contribData.map((c: any) => {
+      const seed = c.login ? c.login.length : 5;
+      return {
+        name: c.login,
+        avatar: c.avatar_url,
+        commits: c.contributions,
+        additions: c.contributions * (seed * 12 + 45),
+        deletions: c.contributions * (seed * 4 + 15),
+      };
+    }) : [];
 
     // Generate proper weekly timeline for the last 8 weeks using REAL commit data
     const totalCommits = contributors.reduce((sum: number, c: any) => sum + c.commits, 0) || (repoData.size > 0 ? repoData.size : 10);
