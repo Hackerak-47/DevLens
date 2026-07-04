@@ -11,12 +11,12 @@ export default function Overview() {
   
   const repo = repoData.overview;
   const stats = [
-    { label: 'Stars', value: repo.stars, icon: HiMiniStar, color: 'orange', trend: '+124', trendDir: 'up' as const },
-    { label: 'Commits', value: repo.commits, icon: FiGitCommit, color: 'green', trend: '+89', trendDir: 'up' as const },
-    { label: 'Contributors', value: repo.contributors, icon: FiUsers, color: 'green', trend: '+5', trendDir: 'up' as const },
-    { label: 'Total Files', value: repo.totalFiles, icon: FiFile, color: 'orange', trend: '+23', trendDir: 'up' as const },
-    { label: 'Lines of Code', value: repo.linesOfCode, icon: HiMiniCodeBracket, color: 'green', trend: '+11.2K', trendDir: 'up' as const },
-    { label: 'Branches', value: repo.branches, icon: FiGitBranch, color: 'orange', trend: '-2', trendDir: 'down' as const },
+    { label: 'Stars', value: repo.stars, icon: HiMiniStar, color: 'orange' },
+    { label: 'Commits', value: repo.commits, icon: FiGitCommit, color: 'green' },
+    { label: 'Contributors', value: repo.contributors, icon: FiUsers, color: 'green' },
+    { label: 'Total Files', value: repo.totalFiles, icon: FiFile, color: 'orange' },
+    { label: 'Lines of Code', value: repo.linesOfCode, icon: HiMiniCodeBracket, color: 'green' },
+    { label: 'Branches', value: repo.branches, icon: FiGitBranch, color: 'orange' },
   ];
 
   return (
@@ -27,9 +27,6 @@ export default function Overview() {
             <div className="stat-card__header">
               <div className={`stat-card__icon stat-card__icon--${stat.color}`}>
                 <stat.icon />
-              </div>
-              <div className={`stat-card__trend stat-card__trend--${stat.trendDir}`}>
-                {stat.trendDir === 'up' ? '↑' : '↓'} {stat.trend}
               </div>
             </div>
             <div className="stat-card__value">

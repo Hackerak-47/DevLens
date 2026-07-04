@@ -169,8 +169,8 @@ export async function POST(req: Request) {
         type: 'module',
         files: files.slice(0, 5).map((f:any) => f.path),
         dependencies: Object.keys(realDependencies).length,
-        complexity: Math.floor(Math.random() * 50) + 20,
-        linesOfCode: (files.length > 0 ? files.length : 100) * 150
+        complexity: files.length,
+        linesOfCode: trueLinesOfCode
       });
 
       depNames.forEach((dep, i) => {
@@ -178,10 +178,10 @@ export async function POST(req: Request) {
         dynamicNodes.push({
           id: dep,
           label: `${dep} ${version}`,
-          type: ['service', 'controller', 'util'][i % 3],
+          type: 'module',
           files: [],
           dependencies: 0,
-          complexity: Math.floor(Math.random() * 20) + 5,
+          complexity: 1,
           linesOfCode: 0
         });
         
@@ -221,15 +221,18 @@ export async function POST(req: Request) {
 
     } else {
       // Fallback to existing mock logic if no package.json found
-      dynamicNodes = dirsToUse.map((dir: any, i: number) => ({
-        id: dir.path,
-        label: dir.path,
-        type: ['module', 'service', 'controller', 'util'][i % 4],
-        files: files.filter((f: any) => f.path.startsWith(dir.path + '/')).map((f: any) => f.path).slice(0, 5),
-        dependencies: Math.floor(Math.random() * 5) + 1,
-        complexity: Math.floor(Math.random() * 100),
-        linesOfCode: Math.floor(Math.random() * 5000) + 500
-      }));
+      dynamicNodes = dirsToUse.map((dir: any, i: number) => {
+        const dirFiles = files.filter((f: any) => f.path.startsWith(dir.path + '/'));
+        return {
+          id: dir.path,
+          label: dir.path,
+          type: 'module',
+          files: dirFiles.map((f: any) => f.path).slice(0, 5),
+          dependencies: 0,
+          complexity: dirFiles.length,
+          linesOfCode: dirFiles.length * 50 // Approx bytes/loc
+        };
+      });
 
       for (let i = 0; i < dynamicNodes.length; i++) {
         const source = dynamicNodes[i].id;
