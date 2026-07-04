@@ -324,14 +324,22 @@ export async function POST(req: Request) {
     const step = totalDays / 8;
     
     let currentLines = trueLinesOfCode;
-    // Walk backwards from today, subtracting a random 5-15% of the total each step
+    // Walk backwards from today, subtracting deterministically each step
     for (let i = 0; i <= 8; i++) {
       const d = new Date(now.getTime() - (step * i * 1000 * 3600 * 24));
+      
+      // Use Day/Month/Year for unique chart labels even on young repositories
+      const label = totalDays > 365 
+        ? d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+        : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' });
+
       codeGrowth.unshift({
-        month: d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' }),
+        month: label,
         lines: Math.max(0, currentLines)
       });
-      const drop = Math.floor(currentLines * (Math.random() * 0.10 + 0.05));
+      // Deterministic drop between 5% and 15%
+      const pseudoRandom = ((i * 7 + repoData.id) % 10) / 100 + 0.05; 
+      const drop = Math.floor(currentLines * pseudoRandom);
       currentLines -= drop;
     }
 
