@@ -322,14 +322,14 @@ export async function POST(req: Request) {
     // Generate logical growth timeline based on creation date that ends exactly at trueLinesOfCode
     const codeGrowth = [];
     const createdAt = new Date(repoData.created_at || '2020-01-01');
-    const now = new Date();
-    const totalDays = (now.getTime() - createdAt.getTime()) / (1000 * 3600 * 24);
+    const endDate = new Date(repoData.pushed_at || repoData.updated_at || new Date());
+    const totalDays = (endDate.getTime() - createdAt.getTime()) / (1000 * 3600 * 24);
     const step = totalDays / 8;
     
     let currentLines = trueLinesOfCode;
-    // Walk backwards from today, subtracting deterministically each step
+    // Walk backwards from the last update, subtracting deterministically each step
     for (let i = 0; i <= 8; i++) {
-      const d = new Date(now.getTime() - (step * i * 1000 * 3600 * 24));
+      const d = new Date(endDate.getTime() - (step * i * 1000 * 3600 * 24));
       
       // Use Day/Month/Year for unique chart labels even on young repositories
       const label = totalDays > 365 
