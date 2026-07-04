@@ -99,7 +99,7 @@ export default function DependencyGraph() {
       data: {
         label: node.label,
         nodeType: node.type,
-        fileCount: node.files.length,
+        fileCount: node.totalFiles !== undefined ? node.totalFiles : (node.files ? node.files.length : 0),
         deps: node.dependencies,
         complexity: node.complexity,
         files: node.files,

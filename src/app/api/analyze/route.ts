@@ -185,6 +185,7 @@ export async function POST(req: Request) {
         label: `${repo} (Root)`,
         type: 'module',
         files: files.slice(0, 5).map((f:any) => f.path),
+        totalFiles: files.length,
         dependencies: Object.keys(realDependencies).length,
         complexity: files.length,
         linesOfCode: trueLinesOfCode
@@ -197,6 +198,7 @@ export async function POST(req: Request) {
           label: `${dep} ${version}`,
           type: 'module',
           files: [],
+          totalFiles: 0,
           dependencies: 0,
           complexity: 1,
           linesOfCode: 0
@@ -251,6 +253,7 @@ export async function POST(req: Request) {
           label: d.dir.path,
           type: 'module',
           files: d.dirFiles.map((f: any) => f.path).slice(0, 5),
+          totalFiles: d.dirFiles.length,
           dependencies: 0,
           complexity: d.dirFiles.length,
           linesOfCode: Math.round(trueLinesOfCode * proportion)
@@ -337,8 +340,9 @@ export async function POST(req: Request) {
         month: label,
         lines: Math.max(0, currentLines)
       });
-      // Deterministic drop between 5% and 15%
-      const pseudoRandom = ((i * 7 + repoData.id) % 10) / 100 + 0.05; 
+      // Deterministic drop between 5% and 15% using a safe string-based seed
+      const safeSeed = (repo || 'devlens').length;
+      const pseudoRandom = ((i * 7 + safeSeed) % 10) / 100 + 0.05; 
       const drop = Math.floor(currentLines * pseudoRandom);
       currentLines -= drop;
     }
