@@ -58,18 +58,32 @@ export async function POST(req: Request) {
     const commitsRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/commits?per_page=100`, { headers });
     const commitsData = commitsRes.ok ? await commitsRes.json() : [];
 
-    // 4. Fetch Contributors
+    // 4. Fetch Contributors (basic info)
     const contribRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/contributors?per_page=5`, { headers });
     const contribData = contribRes.ok ? await contribRes.json() : [];
     
+    // 4b. Fetch real additions/deletions from GitHub stats API
+    const statsRes = await fetch(`${GITHUB_API_BASE}/repos/${owner}/${repo}/stats/contributors`, { headers });
+    const statsData = statsRes.ok ? await statsRes.json() : [];
+    const statsMap: Record<string, { additions: number; deletions: number }> = {};
+    if (Array.isArray(statsData)) {
+      statsData.forEach((s: any) => {
+        if (s.author?.login && Array.isArray(s.weeks)) {
+          const totalAdd = s.weeks.reduce((sum: number, w: any) => sum + (w.a || 0), 0);
+          const totalDel = s.weeks.reduce((sum: number, w: any) => sum + (w.d || 0), 0);
+          statsMap[s.author.login] = { additions: totalAdd, deletions: totalDel };
+        }
+      });
+    }
+
     const contributors = Array.isArray(contribData) ? contribData.map((c: any) => {
-      const seed = c.login ? c.login.length : 5;
+      const realStats = statsMap[c.login];
       return {
         name: c.login,
         avatar: c.avatar_url,
         commits: c.contributions,
-        additions: c.contributions * (seed * 12 + 45),
-        deletions: c.contributions * (seed * 4 + 15),
+        additions: realStats ? realStats.additions : 0,
+        deletions: realStats ? realStats.deletions : 0,
       };
     }) : [];
 
@@ -223,17 +237,23 @@ export async function POST(req: Request) {
       }
 
     } else {
-      // Fallback to existing mock logic if no package.json found
-      dynamicNodes = dirsToUse.map((dir: any, i: number) => {
-        const dirFiles = files.filter((f: any) => f.path.startsWith(dir.path + '/'));
+      // Fallback: build nodes from top-level directories, distribute trueLinesOfCode proportionally
+      const dirFileCounts = dirsToUse.map((dir: any) => ({
+        dir,
+        dirFiles: files.filter((f: any) => f.path.startsWith(dir.path + '/'))
+      }));
+      const totalDirFiles = dirFileCounts.reduce((sum, d) => sum + d.dirFiles.length, 0) || 1;
+
+      dynamicNodes = dirFileCounts.map((d, i) => {
+        const proportion = d.dirFiles.length / totalDirFiles;
         return {
-          id: dir.path,
-          label: dir.path,
+          id: d.dir.path,
+          label: d.dir.path,
           type: 'module',
-          files: dirFiles.map((f: any) => f.path).slice(0, 5),
+          files: d.dirFiles.map((f: any) => f.path).slice(0, 5),
           dependencies: 0,
-          complexity: dirFiles.length,
-          linesOfCode: dirFiles.length * 50 // Approx bytes/loc
+          complexity: d.dirFiles.length,
+          linesOfCode: Math.round(trueLinesOfCode * proportion)
         };
       });
 
