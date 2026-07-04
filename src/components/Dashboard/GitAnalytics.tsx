@@ -105,11 +105,7 @@ export default function GitAnalytics() {
                   <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{contributor.name}</div>
                   <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{contributor.commits} commits</div>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
-                  <span style={{ color: '#00d97e' }}>+{(contributor.additions / 1000).toFixed(1)}K</span>
-                  {' / '}
-                  <span style={{ color: '#ff6b35' }}>-{(contributor.deletions / 1000).toFixed(1)}K</span>
-                </div>
+
               </div>
             ))}
           </div>
