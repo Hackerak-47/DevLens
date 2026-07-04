@@ -36,6 +36,7 @@ export interface DependencyNode {
   complexity: number;
   dependencies: number;
   linesOfCode: number;
+  totalFiles?: number;
 }
 
 export interface DependencyEdge {
